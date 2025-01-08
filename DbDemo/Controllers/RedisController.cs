@@ -14,20 +14,8 @@ public class RedisController(IRedisService redis) : ControllerBase
     [HttpGet("get-server-info")]
     public async Task<ActionResult<object>> GetServerInfo() => await redis.GetServerInfoAsync();
 
-    [NonAction]
-    [HttpPost("insert-random")]
-    public async Task<ActionResult<ResponseBase>> Insert()
-    {
-        var id = Guid.NewGuid().ToString("N").ToUpper();
-
-        var data = new
-        {
-            Name = id,
-            Location = "Malaysia"
-        };
-
-        return await redis.InsertAsync(id, data);
-    }
+    [HttpGet("get-connected-clients")]
+    public async Task<ActionResult<List<object>>> GetConnectedClients() => await redis.GetConnectedClientsAsync();
 
     [HttpPost("insert-user")]
     public async Task<ActionResult<ResponseBase>> InsertUser([FromBody] User req) => await redis.InsertUserAsync(req);

@@ -7,7 +7,7 @@ namespace DbDemo.Services;
 public class RedisService : IRedisService
 {
     private readonly ILogger<RedisService> logger;
-    private readonly Lazy<Task<IConnectionMultiplexer>> connectionAsync;
+    private readonly Lazy<Task<IConnectionMultiplexer>> connection;
     private readonly string hostAndPort;
 
     public RedisService(ILogger<RedisService> logger, IConfiguration config)
@@ -31,17 +31,7 @@ public class RedisService : IRedisService
             AbortOnConnectFail = false,
         };
 
-        //connection = new Lazy<IConnectionMultiplexer>(() =>
-        //{
-        //    var mutex = ConnectionMultiplexer.Connect(configOption);
-        //    mutex.ErrorMessage += (a, b) => { this.logger.LogError($"{a}, Error: {b.Message}"); };
-        //    mutex.InternalError += (a, b) => { this.logger.LogError($"{a}, Error: {b.Exception}"); };
-        //    mutex.ConnectionFailed += (a, b) => { this.logger.LogError($"{a}, Error: {b.Exception}"); };
-        //    mutex.ConnectionRestored += (a, b) => { this.logger.LogInformation($"{a}, Connection restored"); };
-        //    return mutex;
-        //});
-
-        connectionAsync = new Lazy<Task<IConnectionMultiplexer>>(async () =>
+        connection = new Lazy<Task<IConnectionMultiplexer>>(async () =>
         {
             var mutex = await ConnectionMultiplexer.ConnectAsync(configOption);
             mutex.ErrorMessage += (a, b) => { this.logger.LogError($"{a}, Error: {b.Message}"); };
@@ -54,13 +44,13 @@ public class RedisService : IRedisService
 
     private async Task<IServer> GetServerAsync()
     {
-        var val = await connectionAsync.Value;
+        var val = await connection.Value;
         return val.GetServer(hostAndPort);
     }
 
     private async Task<IDatabase> GetDbAsync()
     {
-        var val = await connectionAsync.Value;
+        var val = await connection.Value;
         return val.GetDatabase();
     }
 
@@ -80,6 +70,30 @@ public class RedisService : IRedisService
             ServerTimeLocal = serverTime.ToLocalTime(),
             server.Version
         };
+    }
+
+    public async Task<List<object>> GetConnectedClientsAsync()
+    {
+        var server = await GetServerAsync();
+        var clt = await server.ClientListAsync();
+        List<object> objs = [];
+
+        foreach(var c in clt)
+        {
+            objs.Add(new
+            {
+              c.Host,
+              c.Port,
+              c.Name,
+              c.ProtocolVersion,
+              c.LibraryVersion,
+              c.AgeSeconds,
+              c.LastCommand,
+              c.LibraryName
+            });
+        }
+
+        return objs;
     }
 
     public async Task<RedisType> GetKeyTypeAsync(string key)
@@ -137,6 +151,13 @@ public class RedisService : IRedisService
         };
     }
 
+    //public async Task<List<User>> ListAllUserAsync()
+    //{
+    //    var db = await GetDbAsync();
+
+    //    var all = db.get
+    //}
+
 
 
     public async Task<ResponseBase> InsertAsync<T>(string key, T value)
@@ -164,7 +185,7 @@ public class RedisService : IRedisService
             return new ResponseBase
             {
                 IsSuccess = true,
-                Message = $"[DB] KEY {key} set [{sw.Elapsed}]"
+                Message = $"KEY {key} set [{sw.Elapsed}]"
             };
         }
         catch (Exception ex)
@@ -229,6 +250,7 @@ public class RedisService : IRedisService
 public interface IRedisService
 {
     Task<object> GetServerInfoAsync();
+    Task<List<object>> GetConnectedClientsAsync();
     Task<RedisType> GetKeyTypeAsync(string key);
     Task<ResponseBase> InsertUserAsync(User value);
     Task<User> GetUserAsync(string key);
