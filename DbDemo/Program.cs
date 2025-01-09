@@ -1,3 +1,6 @@
+global using static DbDemo.Constants;
+global using DbDemo.Models;
+global using DbDemo.Enums;
 using DbDemo.Services;
 using DbDemo.Workers;
 
