@@ -12,22 +12,24 @@ public class MongoDbRepo : IMongoDb
     public MongoDbRepo(ILogger<MongoDbRepo> consoleLogger, IConfiguration config)
     {
         this.consoleLogger = consoleLogger;
-
-        MongoClient client = null;
-        string dbName = null;
-
         var useMongoUrl = bool.Parse(config["MongoDb:UseMongoUrl"]);
+
+        MongoClient client;
+        string dbName;
+
         if (useMongoUrl)
         {
-            MongoUrl mongoUrl = new(config["MongoDb:MongoUrl"]);
-            dbName = mongoUrl.DatabaseName;
-            client = new(mongoUrl);
+            var prefix = "MongoDb:MongoUrl";
+            var mcs = MongoClientSettings.FromConnectionString(config[$"{prefix}:ConnectionString"]);
+            dbName = config[$"{prefix}:DbName"];
+            client = new(mcs);
         }
         else
         {
-            var host = config["MongoDb:Custom:Host"];
-            var port = int.Parse(config["MongoDb:Custom:Port"]);
-            dbName = config["MongoDb:Custom:DbName"];
+            var prefix = "MongoDb:Custom";
+            var host = config[$"{prefix}:Host"];
+            var port = int.Parse(config[$"{prefix}:Port"]);
+            dbName = config[$"{prefix}:DbName"];
             var conString = $"mongodb://{host}:{port}";
             client = new(conString);
         }
@@ -36,7 +38,7 @@ public class MongoDbRepo : IMongoDb
 
         for (int i = 0; i < 10; i++)
         {
-            collections.Add(i.ToString(), db.GetCollection<MongoPhoneNumber>($"pn{i}"));
+            collections.Add(i.ToString(), db.GetCollection<MongoPhoneNumber>($"p{i}"));
         }
     }
 
