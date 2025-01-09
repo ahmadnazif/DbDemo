@@ -151,15 +151,6 @@ public class RedisService : IRedisService
         };
     }
 
-    //public async Task<List<User>> ListAllUserAsync()
-    //{
-    //    var db = await GetDbAsync();
-
-    //    var all = db.get
-    //}
-
-
-
     public async Task<ResponseBase> InsertAsync<T>(string key, T value)
     {
         try
