@@ -3,12 +3,12 @@ using MongoDB.Driver;
 
 namespace DbDemo.Services;
 
-public class MongoService : IMongoService
+public class MongoDbRepo : IMongoService
 {
-    private readonly ILogger<MongoService> consoleLogger;
+    private readonly ILogger<MongoDbRepo> consoleLogger;
     private readonly Dictionary<string, IMongoCollection<MongoUser>> collections = [];
 
-    public MongoService(ILogger<MongoService> consoleLogger, IConfiguration config)
+    public MongoDbRepo(ILogger<MongoDbRepo> consoleLogger, IConfiguration config)
     {
         this.consoleLogger = consoleLogger;
 
