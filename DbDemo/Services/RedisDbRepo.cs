@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace DbDemo.Services;
 
-public class RedisDbRepo : IRedisService
+public class RedisDbRepo : IRedisDb
 {
     private readonly ILogger<RedisDbRepo> logger;
     private readonly Lazy<Task<IConnectionMultiplexer>> connection;
@@ -238,7 +238,7 @@ public class RedisDbRepo : IRedisService
 
 }
 
-public interface IRedisService
+public interface IRedisDb
 {
     Task<object> GetServerInfoAsync();
     Task<List<object>> GetConnectedClientsAsync();

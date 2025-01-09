@@ -6,9 +6,9 @@ namespace DbDemo.Controllers;
 
 [Route("api/redis")]
 [ApiController]
-public class RedisController(IRedisService redis) : ControllerBase
+public class RedisController(IRedisDb redis) : ControllerBase
 {
-    private readonly IRedisService redis = redis;
+    private readonly IRedisDb redis = redis;
     private readonly Random r = new();
 
     [HttpGet("get-server-info")]
