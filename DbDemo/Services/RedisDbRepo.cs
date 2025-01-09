@@ -1,6 +1,7 @@
 ﻿using DbDemo.Models;
 using StackExchange.Redis;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace DbDemo.Services;
 
@@ -102,7 +103,13 @@ public class RedisDbRepo : IRedisDb
         return await db.KeyTypeAsync(key);
     }
 
-    public async Task<ResponseBase> InsertUserAsync(User value)
+    public async Task<bool> IsExistAsync(string msisdn)
+    {
+        var db = await GetDbAsync();
+        return await db.KeyExistsAsync(msisdn);
+    }
+
+    public async Task<ResponseBase> SetAsync(string msisdn, string @operator, DateTime? updateTime = null)
     {
         try
         {
@@ -110,20 +117,19 @@ public class RedisDbRepo : IRedisDb
 
             HashEntry[] entries =
             [
-                new(nameof(value.Username), value.Username),
-                new(nameof(value.Email), value.Email),
-                new(nameof(value.Age), value.Age),
+                new(OPERATOR, @operator),
+                new(UPDATE_TIME, updateTime.HasValue ? updateTime.Value.ToDbDateTimeString() : DateTime.Now.ToDbDateTimeString())
             ];
 
             var db = await GetDbAsync();
 
-            await db.HashSetAsync(value.Username, entries);
+            await db.HashSetAsync(msisdn, entries);
             sw.Stop();
 
             return new ResponseBase
             {
                 IsSuccess = true,
-                Message = $"User '{value.Username}' set [{sw.Elapsed}]"
+                Message = $"MSISDN '{msisdn}' set [{sw.Elapsed}]"
             };
         }
         catch (Exception ex)
@@ -135,6 +141,7 @@ public class RedisDbRepo : IRedisDb
             };
         }
     }
+
 
     public async Task<User> GetUserAsync(string key)
     {
@@ -150,6 +157,36 @@ public class RedisDbRepo : IRedisDb
             Email = dictionary.TryGetValue(nameof(User.Email), out var email) ? email : null
         };
     }
+
+    public async Task<PhoneNumber> GetAsync(string msisdn)
+    {
+        var db = await GetDbAsync();
+
+        var all = await db.HashGetAllAsync(msisdn);
+        var dic = all.ToStringDictionary(); //all.ToDictionary(entry => (string)entry.Name, entry => (string)entry.Value);
+
+        return new PhoneNumber
+        {
+            Msisdn = msisdn,
+            Operator = dic[OPERATOR],
+            UpdateTime = DateTime.Parse(dic[UPDATE_TIME]),
+        };
+    }
+
+    public async Task<string> GetAsync(string msisdn, MsisdnField field)
+    {
+        var db = await GetDbAsync();
+
+        var f = field switch
+        {
+            MsisdnField.Operator => OPERATOR,
+            MsisdnField.LastUpdatedDate => UPDATE_TIME,
+            _ => null
+        };
+
+        return await db.HashGetAsync(msisdn, f);
+    }
+
 
     public async Task<ResponseBase> InsertAsync<T>(string key, T value)
     {
@@ -203,11 +240,35 @@ public class RedisDbRepo : IRedisDb
         return val.ToString();
     }
 
-    public async Task<long> CountDbRowAsync()
+    public async Task<long> CountRowAsync(int? index = null)
     {
         var server = await GetServerAsync();
-        return await server.DatabaseSizeAsync();
+        return await server.DatabaseSizeAsync(index ?? -1);
     }
+
+    public async IAsyncEnumerable<PhoneNumber> StreamAsync(int? dbIndex, [EnumeratorCancellation] CancellationToken ct)
+    {
+        var server = await GetServerAsync();
+        var db = await GetDbAsync();
+        var keys = server.KeysAsync(dbIndex ?? -1);
+
+        await foreach (var key in keys)
+        {
+            if (ct.IsCancellationRequested)
+                yield break;
+
+            var hashesRaw = await db.HashGetAllAsync(key);
+            var hashes = hashesRaw.ToStringDictionary();
+
+            yield return new()
+            {
+                Msisdn = key,
+                Operator = hashes[OPERATOR],
+                UpdateTime = DateTime.Parse(hashes[UPDATE_TIME]),
+            };
+        }
+    }
+
 
     public async Task<ResponseBase> DeleteAsync(string key)
     {
@@ -238,15 +299,13 @@ public class RedisDbRepo : IRedisDb
 
 }
 
-public interface IRedisDb
+public interface IRedisDb : IMsisdnDb
 {
     Task<object> GetServerInfoAsync();
     Task<List<object>> GetConnectedClientsAsync();
     Task<RedisType> GetKeyTypeAsync(string key);
-    Task<ResponseBase> InsertUserAsync(User value);
-    Task<User> GetUserAsync(string key);
-    Task<ResponseBase> InsertAsync<T>(string key, T value);
-    Task<string> GetStringValueAsync(string key, string fieldName);
-    Task<long> CountDbRowAsync();
-    Task<ResponseBase> DeleteAsync(string key);
+    //Task<ResponseBase> InsertUserAsync(User value);
+    //Task<User> GetUserAsync(string key);
+    //Task<ResponseBase> InsertAsync<T>(string key, T value);
+    //Task<string> GetStringValueAsync(string key, string fieldName);
 }
