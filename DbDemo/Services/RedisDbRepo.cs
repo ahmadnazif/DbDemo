@@ -142,22 +142,6 @@ public class RedisDbRepo : IRedisDb
         }
     }
 
-
-    public async Task<User> GetUserAsync(string key)
-    {
-        var db = await GetDbAsync();
-
-        var all = await db.HashGetAllAsync(key);
-        var dictionary = all.ToDictionary(entry => (string)entry.Name, entry => (string)entry.Value);
-
-        return new()
-        {
-            Username = dictionary.TryGetValue(nameof(User.Username), out var username) ? username : null,
-            Age = dictionary.TryGetValue(nameof(User.Age), out var ageStr) && int.TryParse(ageStr, out var age) ? age : 0,
-            Email = dictionary.TryGetValue(nameof(User.Email), out var email) ? email : null
-        };
-    }
-
     public async Task<PhoneNumber> GetAsync(string msisdn)
     {
         var db = await GetDbAsync();

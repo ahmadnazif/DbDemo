@@ -1,42 +1,175 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
+using System.Runtime.CompilerServices;
 
 namespace DbDemo.Services;
 
-public class MongoDbRepo : IMongoService
+public class MongoDbRepo : IMongoDb
 {
     private readonly ILogger<MongoDbRepo> consoleLogger;
-    private readonly Dictionary<string, IMongoCollection<MongoUser>> collections = [];
+    private readonly Dictionary<string, IMongoCollection<MongoPhoneNumber>> collections = [];
 
     public MongoDbRepo(ILogger<MongoDbRepo> consoleLogger, IConfiguration config)
     {
         this.consoleLogger = consoleLogger;
 
-        var host = config["MongoDb:Host"];
-        var port = int.Parse(config["MongoDb:Port"]);
-        var dbName = config["MongoDb:DbName"];
-        var conString = $"mongodb://{host}:{port}";
+        MongoClient client = null;
+        string dbName = null;
 
-        MongoClient client = new(conString);
+        var useMongoUrl = bool.Parse(config["MongoDb:UseMongoUrl"]);
+        if (useMongoUrl)
+        {
+            MongoUrl mongoUrl = new(config["MongoDb:MongoUrl"]);
+            dbName = mongoUrl.DatabaseName;
+            client = new(mongoUrl);
+        }
+        else
+        {
+            var host = config["MongoDb:Custom:Host"];
+            var port = int.Parse(config["MongoDb:Custom:Port"]);
+            dbName = config["MongoDb:Custom:DbName"];
+            var conString = $"mongodb://{host}:{port}";
+            client = new(conString);
+        }
+
         var db = client.GetDatabase(dbName);
 
         for (int i = 0; i < 10; i++)
         {
-            collections.Add(i.ToString(), db.GetCollection<MongoUser>($"pl{i}"));
+            collections.Add(i.ToString(), db.GetCollection<MongoPhoneNumber>($"pn{i}"));
+        }
+    }
+
+    private IMongoCollection<MongoPhoneNumber> GetCollection(string msisdn)
+    {
+        var key = msisdn[^1];
+        return collections[key.ToString()];
+    }
+
+    private IMongoCollection<MongoPhoneNumber> GetCollection(int? index)
+    {
+        return collections[index.HasValue ? index.ToString() : "0"];
+    }
+
+    private static FilterDefinition<MongoPhoneNumber> EqFilter(string msisdn) => Builders<MongoPhoneNumber>.Filter.Eq(x => x.M, msisdn);
+
+    public async Task<long> CountRowAsync(int? index = null)
+    {
+        if (index < 0 || index > 10)
+            return 0;
+
+        return await GetCollection(index).EstimatedDocumentCountAsync(); //.CountDocumentsAsync(new BsonDocument());
+    }
+
+    public Task<ResponseBase> DeleteAsync(string msisdn)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<PhoneNumber> GetAsync(string msisdn)
+    {
+        var filter = EqFilter(msisdn);
+        var result = await GetCollection(msisdn).Find(filter).FirstOrDefaultAsync();
+
+        if (result == null)
+            return null;
+        else
+            return new()
+            {
+                Msisdn = result.M,
+                Operator = result.O,
+                UpdateTime = result.U,
+            };
+    }
+
+    public async Task<string> GetAsync(string msisdn, MsisdnField field)
+    {
+        var filter = EqFilter(msisdn);
+        var result = await GetCollection(msisdn).Find(filter).FirstOrDefaultAsync();
+
+        if (result == null)
+            return null;
+        else
+            return field switch
+            {
+                MsisdnField.Operator => result.O,
+                MsisdnField.LastUpdatedDate => result.U.ToDbDateTimeString(),
+                _ => null
+            };
+    }
+
+    public async Task<bool> IsExistAsync(string msisdn)
+    {
+        var filter = EqFilter(msisdn);
+        return await GetCollection(msisdn).Find(filter).AnyAsync();
+    }
+
+    public async Task<ResponseBase> SetAsync(string msisdn, string @operator, DateTime? updateTime = null)
+    {
+        var filter = EqFilter(msisdn);
+
+        if (await IsExistAsync(msisdn))
+        {
+            var ut = updateTime ?? DateTime.Now;
+
+            var updateData = Builders<MongoPhoneNumber>.Update
+                .Set(x => x.O, @operator)
+                .Set(x => x.U, ut);
+
+            var result = await GetCollection(msisdn).UpdateOneAsync(filter, updateData);
+            return new()
+            {
+                IsSuccess = result.IsAcknowledged,
+                Message = result.IsAcknowledged ? $"Updated = {msisdn}, {@operator}, {ut}" : null
+            };
+        }
+        else
+        {
+            MongoPhoneNumber num = new()
+            {
+                M = msisdn,
+                O = @operator,
+                U = updateTime ?? DateTime.Now,
+            };
+
+            await GetCollection(msisdn).InsertOneAsync(num);
+            return new()
+            {
+                IsSuccess = true,
+                Message = $"Created = {num.M}, {num.O}, {num.U}"
+            };
+        }
+    }
+
+    public async IAsyncEnumerable<PhoneNumber> StreamAsync(int? index, [EnumeratorCancellation] CancellationToken ct)
+    {
+        var filter = Builders<MongoPhoneNumber>.Filter.Empty;
+        var list = await GetCollection(index).Find(filter).ToListAsync(cancellationToken: ct);
+
+        foreach (var l in list)
+        {
+            if (ct.IsCancellationRequested)
+                yield break;
+
+            yield return new()
+            {
+                Msisdn = l.M,
+                Operator = l.O,
+                UpdateTime = l.U
+            };
         }
     }
 }
 
-internal class MongoUser
+internal class MongoPhoneNumber
 {
     [BsonId]
-    public string MS { get; set; }
-    public string OP { get; set; }
-    public DateTime UT { get; set; }
-    public DateTime CT { get; set; }
+    public string M { get; set; }
+    public string O { get; set; }
+    public DateTime U { get; set; }
 }
 
-public interface IMongoService
+public interface IMongoDb : IMsisdnDb
 {
 
 }

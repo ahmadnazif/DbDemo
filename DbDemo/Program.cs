@@ -11,6 +11,7 @@ var config = builder.Configuration;
 builder.Services.AddHostedService<AppWorker>();
 builder.Services.AddSingleton<CacheService>();
 builder.Services.AddSingleton<IRedisDb, RedisDbRepo>();
+builder.Services.AddSingleton<IMongoDb, MongoDbRepo>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

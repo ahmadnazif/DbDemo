@@ -17,28 +17,20 @@ public class RedisController(IRedisDb redis) : ControllerBase
     [HttpGet("get-connected-clients")]
     public async Task<ActionResult<List<object>>> GetConnectedClients() => await redis.GetConnectedClientsAsync();
 
-    [HttpPost("insert-user")]
-    public async Task<ActionResult<ResponseBase>> InsertUser([FromBody] User req) => await redis.InsertUserAsync(req);
-
-    [HttpPost("insert-random-user")]
-    public async Task<ActionResult<ResponseBase>> InsertRandomUser()
+    [HttpPost("insert-random")]
+    public async Task<ActionResult<ResponseBase>> InsertRandom()
     {
-        var id = Guid.NewGuid().ToString("N").ToUpper();
-        User user = new()
-        {
-            Username = id,
-            Age = r.Next(10, 30),
-            Email = $"{id}@email.com"
-        };
+        var num = $"60{r.Next(100000000, 199999999)}";
+        var oper = (char)('A' + r.Next(0, 26));
 
-        return await redis.InsertUserAsync(user);
+        return await redis.SetAsync(num, oper.ToString(), DateTime.Now);
     }
 
-    [HttpGet("get-user")]
-    public async Task<ActionResult<User>> GetUser([FromQuery] string key) => await redis.GetUserAsync(key);
+    [HttpGet("get")]
+    public async Task<ActionResult<PhoneNumber>> Get([FromQuery] string msisdn) => await redis.GetAsync(msisdn);
 
     [HttpGet("count")]
-    public async Task<ActionResult<long>> CountDbRow() => await redis.CountDbRowAsync();
+    public async Task<ActionResult<long>> CountDbRow() => await redis.CountRowAsync();
 
     [HttpGet("get-key-type")]
     public async Task<ActionResult<string>> GetKeyType([FromQuery] string key)
@@ -46,9 +38,6 @@ public class RedisController(IRedisDb redis) : ControllerBase
         var kt = await redis.GetKeyTypeAsync(key);
         return kt.ToString();
     }
-
-    [HttpGet("get-string-value")]
-    public async Task<ActionResult<string>> GetStringValue([FromQuery] string key, [FromQuery] string fieldName) => await redis.GetStringValueAsync(key, fieldName);
 
     [HttpDelete("delete")]
     public async Task<ActionResult<ResponseBase>> Delete([FromQuery] string key) => await redis.DeleteAsync(key);

@@ -3,6 +3,5 @@
 public enum MsisdnField
 {
     Operator,
-    LastUpdatedDate,
-    CreatedDate
+    LastUpdatedDate
 }
