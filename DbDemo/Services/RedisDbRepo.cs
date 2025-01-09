@@ -4,13 +4,13 @@ using System.Diagnostics;
 
 namespace DbDemo.Services;
 
-public class RedisService : IRedisService
+public class RedisDbRepo : IRedisService
 {
-    private readonly ILogger<RedisService> logger;
+    private readonly ILogger<RedisDbRepo> logger;
     private readonly Lazy<Task<IConnectionMultiplexer>> connection;
     private readonly string hostAndPort;
 
-    public RedisService(ILogger<RedisService> logger, IConfiguration config)
+    public RedisDbRepo(ILogger<RedisDbRepo> logger, IConfiguration config)
     {
         this.logger = logger;
 

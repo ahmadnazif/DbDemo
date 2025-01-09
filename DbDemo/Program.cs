@@ -9,7 +9,7 @@ var config = builder.Configuration;
 
 builder.Services.AddHostedService<AppWorker>();
 builder.Services.AddSingleton<CacheService>();
-builder.Services.AddSingleton<IRedisService, RedisService>();
+builder.Services.AddSingleton<IRedisService, RedisDbRepo>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
