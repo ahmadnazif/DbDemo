@@ -1,5 +1,6 @@
 ﻿using DbDemo.Models;
 using StackExchange.Redis;
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -281,6 +282,53 @@ public class RedisDbRepo : IRedisDb
         }
     }
 
+    public async Task<ResponseBase> SaveDocAsync(string username, string filename)
+    {
+        try
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+
+            HashEntry[] entries =
+            [
+                new("Username", username),
+                new("Filename", filename)
+            ];
+
+            var db = await GetDbAsync();
+
+            await db.HashSetAsync(username, entries);
+            sw.Stop();
+
+            return new ResponseBase
+            {
+                IsSuccess = true,
+                Message = $"OK [{sw.Elapsed}]"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new ResponseBase
+            {
+                IsSuccess = false,
+                Message = $"Exception: {ex.Message}"
+            };
+        }
+    }
+
+    public async Task<string> GetDocAsync(string username)
+    {
+        var db = await GetDbAsync();
+
+        var val = await db.HashGetAsync(username, "Filename");
+        return val;
+    }
+
+    public async Task<bool> IsUserExistAsync(string username)
+    {
+        var db = await GetDbAsync();
+
+        return await db.KeyExistsAsync(username);
+    }
 }
 
 public interface IRedisDb : IMsisdnDb

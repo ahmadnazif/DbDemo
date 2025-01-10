@@ -10,4 +10,7 @@ public interface IMsisdnDb
     //Task<ResponseBase> InsertBatchAsync(List<PhoneNumber> list);
     IAsyncEnumerable<PhoneNumber> StreamAsync(int? index, CancellationToken ct);
     Task<ResponseBase> DeleteAsync(string msisdn);
+    Task<ResponseBase> SaveDocAsync(string username, string filename);
+    Task<string> GetDocAsync(string username);
+    Task<bool> IsUserExistAsync(string username);
 }

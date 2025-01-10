@@ -161,6 +161,21 @@ public class MongoDbRepo : IMongoDb
             };
         }
     }
+
+    public Task<ResponseBase> SaveDocAsync(string username, string filename)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<string> GetDocAsync(string username)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> IsUserExistAsync(string username)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 internal class MongoPhoneNumber
