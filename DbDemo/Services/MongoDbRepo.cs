@@ -38,19 +38,24 @@ public class MongoDbRepo : IMongoDb
 
         for (int i = 0; i < 10; i++)
         {
-            collections.Add(i.ToString(), db.GetCollection<MongoPhoneNumber>($"p{i}"));
+            var collectionName = GetCollectionName(i);
+            collections.Add(collectionName, db.GetCollection<MongoPhoneNumber>(collectionName));
         }
     }
 
+    private static string GetCollectionName(int index) => $"p{index}";
+
     private IMongoCollection<MongoPhoneNumber> GetCollection(string msisdn)
     {
-        var key = msisdn[^1];
-        return collections[key.ToString()];
+        var end = int.Parse(msisdn[^1].ToString());
+        var key = GetCollectionName(end);
+        return collections[key];
     }
 
-    private IMongoCollection<MongoPhoneNumber> GetCollection(int? index)
+    private IMongoCollection<MongoPhoneNumber> GetCollection(int index)
     {
-        return collections[index.HasValue ? index.ToString() : "0"];
+        var key = GetCollectionName(index);
+        return collections[key];
     }
 
     private static FilterDefinition<MongoPhoneNumber> EqFilter(string msisdn) => Builders<MongoPhoneNumber>.Filter.Eq(x => x.M, msisdn);
@@ -60,12 +65,31 @@ public class MongoDbRepo : IMongoDb
         if (index < 0 || index > 10)
             return 0;
 
-        return await GetCollection(index).EstimatedDocumentCountAsync(); //.CountDocumentsAsync(new BsonDocument());
+        return await GetCollection(index ?? 0).EstimatedDocumentCountAsync(); //.CountDocumentsAsync(new BsonDocument());
     }
 
-    public Task<ResponseBase> DeleteAsync(string msisdn)
+    public async Task<Dictionary<string, long>> GetCollectionCountAsDictionaryAsync()
     {
-        throw new NotImplementedException();
+        Dictionary<string, long> cols = [];
+        foreach (var c in collections)
+        {
+            cols.Add(c.Key, await c.Value.EstimatedDocumentCountAsync());
+        }
+
+        return cols;
+
+    }
+
+    public async Task<ResponseBase> DeleteAsync(string msisdn)
+    {
+        var filter = EqFilter(msisdn);
+        var result = await GetCollection(msisdn).DeleteOneAsync(filter);
+
+        return new ResponseBase
+        {
+            IsSuccess = result.IsAcknowledged,
+            Message = result.IsAcknowledged ? $"{result.DeletedCount} item deleted" : $"Result is not acknowledged"
+        };
     }
 
     public async Task<PhoneNumber> GetAsync(string msisdn)
@@ -146,7 +170,7 @@ public class MongoDbRepo : IMongoDb
     public async IAsyncEnumerable<PhoneNumber> StreamAsync(int? index, [EnumeratorCancellation] CancellationToken ct)
     {
         var filter = Builders<MongoPhoneNumber>.Filter.Empty;
-        var list = await GetCollection(index).Find(filter).ToListAsync(cancellationToken: ct);
+        var list = await GetCollection(index ?? 0).Find(filter).ToListAsync(cancellationToken: ct);
 
         foreach (var l in list)
         {
@@ -188,5 +212,5 @@ internal class MongoPhoneNumber
 
 public interface IMongoDb : IMsisdnDb
 {
-
+    Task<Dictionary<string, long>> GetCollectionCountAsDictionaryAsync();
 }

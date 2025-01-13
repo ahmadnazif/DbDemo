@@ -10,7 +10,6 @@ var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
 builder.Services.AddHostedService<DirectoryChecker>();
-builder.Services.AddHostedService<LoopWorker>();
 builder.Services.AddHostedService<AppWorker>();
 builder.Services.AddSingleton<CacheService>();
 

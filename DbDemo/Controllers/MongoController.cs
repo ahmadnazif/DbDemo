@@ -11,6 +11,9 @@ public class MongoController(IMongoDb mongo) : ControllerBase
     private readonly IMongoDb mongo = mongo;
     private readonly Random r = new();
 
+    [HttpGet("get-collection-count-as-dictionary")]
+    public async Task<ActionResult<Dictionary<string, long>>> GetColCountAsDict() => await mongo.GetCollectionCountAsDictionaryAsync();
+
     [HttpPost("insert-random")]
     public async Task<ActionResult<ResponseBase>> InsertRandom()
     {
@@ -22,6 +25,9 @@ public class MongoController(IMongoDb mongo) : ControllerBase
 
     [HttpGet("get")]
     public async Task<ActionResult<PhoneNumber>> Get([FromQuery] string msisdn) => await mongo.GetAsync(msisdn);
+
+    [HttpDelete("delete")]
+    public async Task<ActionResult<ResponseBase>> Delete([FromQuery] string msisdn) => await mongo.DeleteAsync(msisdn);
 
     [HttpGet("count")]
     public async Task<ActionResult<long>> CountRow([FromQuery] int index) => await mongo.CountRowAsync(index);
