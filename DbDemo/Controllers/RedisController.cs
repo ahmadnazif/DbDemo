@@ -27,7 +27,7 @@ public class RedisController(IRedisDb redis) : ControllerBase
     }
 
     [HttpGet("get")]
-    public async Task<ActionResult<PhoneNumber>> Get([FromQuery] string msisdn) => await redis.GetAsync(msisdn);
+    public async Task<ActionResult<Msisdn>> Get([FromQuery] string msisdn) => await redis.GetAsync(msisdn);
 
     [HttpGet("count")]
     public async Task<ActionResult<long>> CountDbRow() => await redis.CountRowAsync();

@@ -24,7 +24,7 @@ public class MongoController(IMongoDb mongo) : ControllerBase
     }
 
     [HttpGet("get")]
-    public async Task<ActionResult<PhoneNumber>> Get([FromQuery] string msisdn) => await mongo.GetAsync(msisdn);
+    public async Task<ActionResult<Msisdn>> Get([FromQuery] string msisdn) => await mongo.GetAsync(msisdn);
 
     [HttpDelete("delete")]
     public async Task<ActionResult<ResponseBase>> Delete([FromQuery] string msisdn) => await mongo.DeleteAsync(msisdn);

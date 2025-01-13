@@ -143,14 +143,14 @@ public class RedisDbRepo : IRedisDb
         }
     }
 
-    public async Task<PhoneNumber> GetAsync(string msisdn)
+    public async Task<Msisdn> GetAsync(string msisdn)
     {
         var db = await GetDbAsync();
 
         var all = await db.HashGetAllAsync(msisdn);
         var dic = all.ToStringDictionary(); //all.ToDictionary(entry => (string)entry.Name, entry => (string)entry.Value);
 
-        return new PhoneNumber
+        return new Msisdn
         {
             Msisdn = msisdn,
             Operator = dic[OPERATOR],
@@ -231,7 +231,7 @@ public class RedisDbRepo : IRedisDb
         return await server.DatabaseSizeAsync(index ?? -1);
     }
 
-    public async IAsyncEnumerable<PhoneNumber> StreamAsync(int? dbIndex, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<Msisdn> StreamAsync(int? dbIndex, [EnumeratorCancellation] CancellationToken ct)
     {
         var server = await GetServerAsync();
         var db = await GetDbAsync();

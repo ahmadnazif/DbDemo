@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace DbDemo.Models;
 
-public class PhoneNumberBase
+public class MsisdnBase
 {
     [Required]
     [JsonPropertyName(MSISDN)]

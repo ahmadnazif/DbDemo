@@ -92,7 +92,7 @@ public class MongoDbRepo : IMongoDb
         };
     }
 
-    public async Task<PhoneNumber> GetAsync(string msisdn)
+    public async Task<Msisdn> GetAsync(string msisdn)
     {
         var filter = EqFilter(msisdn);
         var result = await GetCollection(msisdn).Find(filter).FirstOrDefaultAsync();
@@ -167,7 +167,7 @@ public class MongoDbRepo : IMongoDb
         }
     }
 
-    public async IAsyncEnumerable<PhoneNumber> StreamAsync(int? index, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<Msisdn> StreamAsync(int? index, [EnumeratorCancellation] CancellationToken ct)
     {
         var filter = Builders<MongoPhoneNumber>.Filter.Empty;
         var list = await GetCollection(index ?? 0).Find(filter).ToListAsync(cancellationToken: ct);

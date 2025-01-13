@@ -2,7 +2,7 @@
 
 namespace DbDemo.Models;
 
-public class PhoneNumber : PhoneNumberBase
+public class Msisdn : MsisdnBase
 {
     [JsonPropertyName(UPDATE_TIME)] public DateTime UpdateTime { get; set; }
 }
