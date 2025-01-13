@@ -7,7 +7,7 @@ namespace DbDemo.Services;
 public class MongoDbRepo : IMongoDb
 {
     private readonly ILogger<MongoDbRepo> consoleLogger;
-    private readonly Dictionary<string, IMongoCollection<MongoPhoneNumber>> collections = [];
+    private readonly Dictionary<string, IMongoCollection<MongoMsisdn>> collections = [];
 
     public MongoDbRepo(ILogger<MongoDbRepo> consoleLogger, IConfiguration config)
     {
@@ -39,26 +39,26 @@ public class MongoDbRepo : IMongoDb
         for (int i = 0; i < 10; i++)
         {
             var collectionName = GetCollectionName(i);
-            collections.Add(collectionName, db.GetCollection<MongoPhoneNumber>(collectionName));
+            collections.Add(collectionName, db.GetCollection<MongoMsisdn>(collectionName));
         }
     }
 
     private static string GetCollectionName(int index) => $"p{index}";
 
-    private IMongoCollection<MongoPhoneNumber> GetCollection(string msisdn)
+    private IMongoCollection<MongoMsisdn> GetCollection(string msisdn)
     {
         var end = int.Parse(msisdn[^1].ToString());
         var key = GetCollectionName(end);
         return collections[key];
     }
 
-    private IMongoCollection<MongoPhoneNumber> GetCollection(int index)
+    private IMongoCollection<MongoMsisdn> GetCollection(int index)
     {
         var key = GetCollectionName(index);
         return collections[key];
     }
 
-    private static FilterDefinition<MongoPhoneNumber> EqFilter(string msisdn) => Builders<MongoPhoneNumber>.Filter.Eq(x => x.M, msisdn);
+    private static FilterDefinition<MongoMsisdn> EqFilter(string msisdn) => Builders<MongoMsisdn>.Filter.Eq(x => x.M, msisdn);
 
     public async Task<long> CountRowAsync(int? index = null)
     {
@@ -138,7 +138,7 @@ public class MongoDbRepo : IMongoDb
         {
             var ut = updateTime ?? DateTime.Now;
 
-            var updateData = Builders<MongoPhoneNumber>.Update
+            var updateData = Builders<MongoMsisdn>.Update
                 .Set(x => x.O, @operator)
                 .Set(x => x.U, ut);
 
@@ -151,7 +151,7 @@ public class MongoDbRepo : IMongoDb
         }
         else
         {
-            MongoPhoneNumber num = new()
+            MongoMsisdn num = new()
             {
                 M = msisdn,
                 O = @operator,
@@ -169,7 +169,7 @@ public class MongoDbRepo : IMongoDb
 
     public async IAsyncEnumerable<Msisdn> StreamAsync(int? index, [EnumeratorCancellation] CancellationToken ct)
     {
-        var filter = Builders<MongoPhoneNumber>.Filter.Empty;
+        var filter = Builders<MongoMsisdn>.Filter.Empty;
         var list = await GetCollection(index ?? 0).Find(filter).ToListAsync(cancellationToken: ct);
 
         foreach (var l in list)
@@ -202,7 +202,7 @@ public class MongoDbRepo : IMongoDb
     }
 }
 
-internal class MongoPhoneNumber
+internal class MongoMsisdn
 {
     [BsonId]
     public string M { get; set; }
