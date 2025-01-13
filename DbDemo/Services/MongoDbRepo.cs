@@ -210,7 +210,7 @@ internal class MongoPhoneNumber
     public DateTime U { get; set; }
 }
 
-public interface IMongoDb : IMsisdnDb
+public interface IMongoDb : IPhoneLibraryDb
 {
     Task<Dictionary<string, long>> GetCollectionCountAsDictionaryAsync();
 }

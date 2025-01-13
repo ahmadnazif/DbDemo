@@ -1,6 +1,6 @@
 ﻿namespace DbDemo.Services;
 
-public interface IMsisdnDb
+public interface IPhoneLibraryDb
 {
     Task<bool> IsExistAsync(string msisdn);
     Task<PhoneNumber> GetAsync(string msisdn);

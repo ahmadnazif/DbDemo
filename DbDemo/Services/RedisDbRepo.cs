@@ -331,7 +331,7 @@ public class RedisDbRepo : IRedisDb
     }
 }
 
-public interface IRedisDb : IMsisdnDb
+public interface IRedisDb : IPhoneLibraryDb
 {
     Task<object> GetServerInfoAsync();
     Task<List<object>> GetConnectedClientsAsync();
