@@ -128,6 +128,8 @@ public class MongoDbRepo : IMongoDb
             return null;
 
         var result = await coll.Find(filter).FirstOrDefaultAsync();
+        var res = await coll.FindAsync(filter);
+        var r = await res.FirstOrDefaultAsync();
 
         if (result == null)
             return null;
@@ -200,19 +202,22 @@ public class MongoDbRepo : IMongoDb
         if (coll == null)
             yield break;
 
-        var list = await coll.Find(filter).ToListAsync(cancellationToken: ct);
+        using var cursor = await coll.FindAsync(filter, cancellationToken: ct);
 
-        foreach (var l in list)
+        while (await cursor.MoveNextAsync(ct))
         {
-            if (ct.IsCancellationRequested)
-                yield break;
-
-            yield return new()
+            foreach (var data in cursor.Current)
             {
-                Msisdn = l.M,
-                Operator = l.O,
-                UpdateTime = l.U
-            };
+                if (ct.IsCancellationRequested)
+                    yield break;
+
+                yield return new()
+                {
+                    Msisdn = data.M,
+                    Operator = data.O,
+                    UpdateTime = data.U
+                };
+            }
         }
     }
 }
