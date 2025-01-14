@@ -41,6 +41,9 @@ public class MongoDbRepo : IMongoDb
         }
     }
 
+    private const string RESULT_NOT_ACK = "Result is not acknowledged";
+    private static ResponseBase UnknownCollection() => new() { IsSuccess = false, Message = $"Unknown collection" };
+
     private static string GetCollectionName(int index) => $"p{index}";
 
     private IMongoCollection<MongoMsisdn> GetCollectionByMsisdn(string msisdn)
@@ -58,8 +61,6 @@ public class MongoDbRepo : IMongoDb
         var exist = collections.TryGetValue(collectionName, out var result);
         return exist ? result : null;
     }
-
-    private static ResponseBase UnknownCollection() => new() { IsSuccess = false, Message = $"Unknown collection" };
 
     private static FilterDefinition<MongoMsisdn> EqFilter(string msisdn) => Builders<MongoMsisdn>.Filter.Eq(x => x.M, msisdn);
 
@@ -95,7 +96,7 @@ public class MongoDbRepo : IMongoDb
         return new ResponseBase
         {
             IsSuccess = result.IsAcknowledged,
-            Message = result.IsAcknowledged ? $"{result.DeletedCount} item deleted" : $"Result is not acknowledged"
+            Message = result.IsAcknowledged ? $"{result.DeletedCount} item deleted" : RESULT_NOT_ACK
         };
     }
 
@@ -164,7 +165,6 @@ public class MongoDbRepo : IMongoDb
 
         if (await IsExistAsync(msisdn))
         {
-
             var updateData = Builders<MongoMsisdn>.Update
                 .Set(x => x.O, @operator)
                 .Set(x => x.U, ut);
@@ -173,7 +173,7 @@ public class MongoDbRepo : IMongoDb
             return new()
             {
                 IsSuccess = result.IsAcknowledged,
-                Message = result.IsAcknowledged ? $"Updated = {msisdn}, {@operator}, {ut}" : null
+                Message = result.IsAcknowledged ? $"Updated = {msisdn}, {@operator}, {ut}" : RESULT_NOT_ACK
             };
         }
         else
