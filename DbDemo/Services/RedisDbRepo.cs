@@ -340,6 +340,7 @@ public interface IRedisDb : IPhoneLibraryDb
     //Task<User> GetUserAsync(string key);
     //Task<ResponseBase> InsertAsync<T>(string key, T value);
     //Task<string> GetStringValueAsync(string key, string fieldName);
+    Task<long> CountRowAsync(int? index = null);
     Task<ResponseBase> SaveDocAsync(string username, string filename);
     Task<string> GetDocAsync(string username);
     Task<bool> IsUserExistAsync(string username);

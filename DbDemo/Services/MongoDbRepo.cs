@@ -211,15 +211,15 @@ public class MongoDbRepo : IMongoDb
                 if (ct.IsCancellationRequested)
                     yield break;
 
-                if (delayMs > 0)
-                    await Task.Delay(delayMs, ct);
-
                 yield return new()
                 {
                     Msisdn = data.M,
                     Operator = data.O,
                     UpdateTime = data.U
                 };
+
+                if (delayMs > 0)
+                    await Task.Delay(delayMs, ct);
             }
         }
     }
