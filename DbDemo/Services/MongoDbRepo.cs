@@ -63,22 +63,23 @@ public class MongoDbRepo : IMongoDb
 
     private static FilterDefinition<MongoMsisdn> EqFilter(string msisdn) => Builders<MongoMsisdn>.Filter.Eq(x => x.M, msisdn);
 
-    public async Task<long> CountAsync(string collectionName)
+    public IEnumerable<string> ListCollectionNames() => collections.Keys;
+
+    public async Task<Dictionary<string, long>> GetCollectionsCountAsync()
+    {
+        var colls = await Task.WhenAll(collections.Select(async x => new
+        {
+            x.Key,
+            Count = await x.Value.EstimatedDocumentCountAsync()
+        }));
+
+        return colls.ToDictionary(x => x.Key, y => y.Count);
+    }
+
+    public async Task<long> GetCollectionCountAsync(string collectionName)
     {
         var coll = GetCollectionByCollectionName(collectionName);
         return coll == null ? 0 : await coll.EstimatedDocumentCountAsync(); //.CountDocumentsAsync(new BsonDocument());
-    }
-
-    public async Task<Dictionary<string, long>> GetCollectionCountAsDictionaryAsync()
-    {
-        Dictionary<string, long> cols = [];
-        foreach (var c in collections)
-        {
-            cols.Add(c.Key, await c.Value.EstimatedDocumentCountAsync());
-        }
-
-        return cols;
-
     }
 
     public async Task<ResponseBase> DeleteAsync(string msisdn)
@@ -128,8 +129,6 @@ public class MongoDbRepo : IMongoDb
             return null;
 
         var result = await coll.Find(filter).FirstOrDefaultAsync();
-        var res = await coll.FindAsync(filter);
-        var r = await res.FirstOrDefaultAsync();
 
         if (result == null)
             return null;
@@ -228,7 +227,8 @@ public class MongoDbRepo : IMongoDb
 
 public interface IMongoDb : IPhoneLibraryDb
 {
-    Task<Dictionary<string, long>> GetCollectionCountAsDictionaryAsync();
-    Task<long> CountAsync(string collctionName);
+    IEnumerable<string> ListCollectionNames();
+    Task<Dictionary<string, long>> GetCollectionsCountAsync();
+    Task<long> GetCollectionCountAsync(string collectionName);
     IAsyncEnumerable<Msisdn> StreamAsync(string collectionName, int delayMs, CancellationToken ct);
 }

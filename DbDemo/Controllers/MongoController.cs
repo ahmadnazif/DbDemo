@@ -13,8 +13,15 @@ public class MongoController(ILogger<MongoController> logger, IMongoDb mongo) : 
     private readonly IMongoDb mongo = mongo;
     private readonly Random r = new();
 
-    [HttpGet("get-collection-count-as-dictionary")]
-    public async Task<ActionResult<Dictionary<string, long>>> GetColCountAsDict() => await mongo.GetCollectionCountAsDictionaryAsync();
+    [HttpGet("list-collection-names")]
+    public ActionResult<IEnumerable<string>> ListCollectionNames() => mongo.ListCollectionNames().ToList();
+
+
+    [HttpGet("get-collections-count")]
+    public async Task<ActionResult<Dictionary<string, long>>> GetCollectionsCount() => await mongo.GetCollectionsCountAsync();
+
+    [HttpGet("get-collection-count")]
+    public async Task<ActionResult<long>> CountRow([FromQuery] string collectionName) => await mongo.GetCollectionCountAsync(collectionName);
 
     [HttpPost("insert-random")]
     public async Task<ActionResult<ResponseBase>> InsertRandom()
@@ -30,9 +37,6 @@ public class MongoController(ILogger<MongoController> logger, IMongoDb mongo) : 
 
     [HttpDelete("delete")]
     public async Task<ActionResult<ResponseBase>> Delete([FromQuery] string msisdn) => await mongo.DeleteAsync(msisdn);
-
-    [HttpGet("count")]
-    public async Task<ActionResult<long>> CountRow([FromQuery] string collectionName) => await mongo.CountAsync(collectionName);
 
     [HttpGet("stream")]
     public IAsyncEnumerable<Msisdn> Stream([FromQuery] string collectionName, [FromQuery] int delayMs, CancellationToken ct) => mongo.StreamAsync(collectionName, delayMs, ct);
