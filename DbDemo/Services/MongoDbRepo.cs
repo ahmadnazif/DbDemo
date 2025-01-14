@@ -153,7 +153,7 @@ public class MongoDbRepo : IMongoDb
         return await coll.Find(filter).AnyAsync();
     }
 
-    public async Task<ResponseBase> SetAsync(string msisdn, string @operator, DateTime? updateTime = null)
+    public async Task<ResponseBase> SetAsync(string msisdn, string @operator)
     {
         var filter = EqFilter(msisdn);
 
@@ -161,9 +161,10 @@ public class MongoDbRepo : IMongoDb
         if (coll == null)
             return UnknownCollection();
 
+        var ut = DateTime.Now;
+
         if (await IsExistAsync(msisdn))
         {
-            var ut = updateTime ?? DateTime.Now;
 
             var updateData = Builders<MongoMsisdn>.Update
                 .Set(x => x.O, @operator)
@@ -182,7 +183,7 @@ public class MongoDbRepo : IMongoDb
             {
                 M = msisdn,
                 O = @operator,
-                U = updateTime ?? DateTime.Now,
+                U = ut,
             };
 
             await coll.InsertOneAsync(num);

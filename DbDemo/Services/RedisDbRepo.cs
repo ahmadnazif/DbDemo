@@ -110,7 +110,7 @@ public class RedisDbRepo : IRedisDb
         return await db.KeyExistsAsync(msisdn);
     }
 
-    public async Task<ResponseBase> SetAsync(string msisdn, string @operator, DateTime? updateTime = null)
+    public async Task<ResponseBase> SetAsync(string msisdn, string @operator)
     {
         try
         {
@@ -119,7 +119,7 @@ public class RedisDbRepo : IRedisDb
             HashEntry[] entries =
             [
                 new(OPERATOR, @operator),
-                new(UPDATE_TIME, updateTime.HasValue ? updateTime.Value.ToDbDateTimeString() : DateTime.Now.ToDbDateTimeString())
+                new(UPDATE_TIME, DateTime.Now.ToDbDateTimeString())
             ];
 
             var db = await GetDbAsync();

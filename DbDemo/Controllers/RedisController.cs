@@ -23,7 +23,7 @@ public class RedisController(IRedisDb redis) : ControllerBase
         var num = $"60{r.Next(100000000, 199999999)}";
         var oper = (char)('A' + r.Next(0, 26));
 
-        return await redis.SetAsync(num, oper.ToString(), DateTime.Now);
+        return await redis.SetAsync(num, oper.ToString());
     }
 
     [HttpGet("get")]

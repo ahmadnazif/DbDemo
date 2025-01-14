@@ -22,7 +22,7 @@ public class MongoController(ILogger<MongoController> logger, IMongoDb mongo) : 
         var num = $"60{r.Next(100000000, 199999999)}";
         var oper = (char)('A' + r.Next(0, 26));
 
-        return await mongo.SetAsync(num, oper.ToString(), DateTime.Now);
+        return await mongo.SetAsync(num, oper.ToString());
     }
 
     [HttpGet("get")]
