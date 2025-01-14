@@ -6,12 +6,10 @@ namespace DbDemo.Services;
 
 public class MongoDbRepo : IMongoDb
 {
-    private readonly ILogger<MongoDbRepo> consoleLogger;
     private readonly Dictionary<string, IMongoCollection<MongoMsisdn>> collections = [];
 
-    public MongoDbRepo(ILogger<MongoDbRepo> consoleLogger, IConfiguration config)
+    public MongoDbRepo(IConfiguration config)
     {
-        this.consoleLogger = consoleLogger;
         var useMongoUrl = bool.Parse(config["MongoDb:UseMongoUrl"]);
 
         MongoClient client;
@@ -217,14 +215,6 @@ public class MongoDbRepo : IMongoDb
             };
         }
     }
-}
-
-internal class MongoMsisdn
-{
-    [BsonId]
-    public string M { get; set; }
-    public string O { get; set; }
-    public DateTime U { get; set; }
 }
 
 public interface IMongoDb : IPhoneLibraryDb
