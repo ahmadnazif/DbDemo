@@ -1,6 +1,7 @@
 ﻿using DbDemo.Services;
 using Microsoft.AspNetCore.Mvc;
 using StackExchange.Redis;
+using System.Runtime.CompilerServices;
 
 namespace DbDemo.Controllers;
 
@@ -31,5 +32,8 @@ public class MongoController(IMongoDb mongo) : ControllerBase
 
     [HttpGet("count")]
     public async Task<ActionResult<long>> CountRow([FromQuery] string collectionName) => await mongo.CountAsync(collectionName);
+
+    [HttpGet("stream")]
+    public IAsyncEnumerable<Msisdn> Stream([FromQuery] string collectionName, [FromQuery] int delayMs, CancellationToken ct) => mongo.StreamAsync(collectionName, delayMs, ct);
 
 }

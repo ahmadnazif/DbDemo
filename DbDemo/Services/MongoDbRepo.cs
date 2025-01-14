@@ -82,7 +82,7 @@ public class MongoDbRepo : IMongoDb
     }
 
     public async Task<ResponseBase> DeleteAsync(string msisdn)
-    {        
+    {
         var filter = EqFilter(msisdn);
 
         var coll = GetCollectionByMsisdn(msisdn);
@@ -194,7 +194,7 @@ public class MongoDbRepo : IMongoDb
         }
     }
 
-    public async IAsyncEnumerable<Msisdn> StreamAsync(string collectionName, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<Msisdn> StreamAsync(string collectionName, int delayMs, [EnumeratorCancellation] CancellationToken ct)
     {
         var filter = Builders<MongoMsisdn>.Filter.Empty;
 
@@ -211,6 +211,9 @@ public class MongoDbRepo : IMongoDb
                 if (ct.IsCancellationRequested)
                     yield break;
 
+                if (delayMs > 0)
+                    await Task.Delay(delayMs, ct);
+
                 yield return new()
                 {
                     Msisdn = data.M,
@@ -226,5 +229,5 @@ public interface IMongoDb : IPhoneLibraryDb
 {
     Task<Dictionary<string, long>> GetCollectionCountAsDictionaryAsync();
     Task<long> CountAsync(string collctionName);
-    IAsyncEnumerable<Msisdn> StreamAsync(string collectionName, CancellationToken ct);
+    IAsyncEnumerable<Msisdn> StreamAsync(string collectionName, int delayMs, CancellationToken ct);
 }
