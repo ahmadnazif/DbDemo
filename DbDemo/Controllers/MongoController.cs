@@ -30,6 +30,6 @@ public class MongoController(IMongoDb mongo) : ControllerBase
     public async Task<ActionResult<ResponseBase>> Delete([FromQuery] string msisdn) => await mongo.DeleteAsync(msisdn);
 
     [HttpGet("count")]
-    public async Task<ActionResult<long>> CountRow([FromQuery] int index) => await mongo.CountRowAsync(index);
+    public async Task<ActionResult<long>> CountRow([FromQuery] string collectionName) => await mongo.CountAsync(collectionName);
 
 }

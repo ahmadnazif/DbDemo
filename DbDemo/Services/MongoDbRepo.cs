@@ -45,27 +45,30 @@ public class MongoDbRepo : IMongoDb
 
     private static string GetCollectionName(int index) => $"p{index}";
 
-    private IMongoCollection<MongoMsisdn> GetCollection(string msisdn)
+    private IMongoCollection<MongoMsisdn> GetCollectionByMsisdn(string msisdn)
     {
+        if (string.IsNullOrWhiteSpace(msisdn))
+            return null;
+
         var end = int.Parse(msisdn[^1].ToString());
         var key = GetCollectionName(end);
         return collections[key];
     }
 
-    private IMongoCollection<MongoMsisdn> GetCollection(int index)
+    private IMongoCollection<MongoMsisdn> GetCollectionByCollectionName(string collectionName)
     {
-        var key = GetCollectionName(index);
-        return collections[key];
+        var exist = collections.TryGetValue(collectionName, out var result);
+        return exist ? result : null;
     }
+
+    private static ResponseBase UnknownCollection() => new() { IsSuccess = false, Message = $"Unknown collection" };
 
     private static FilterDefinition<MongoMsisdn> EqFilter(string msisdn) => Builders<MongoMsisdn>.Filter.Eq(x => x.M, msisdn);
 
-    public async Task<long> CountRowAsync(int? index = null)
+    public async Task<long> CountAsync(string collectionName)
     {
-        if (index < 0 || index > 10)
-            return 0;
-
-        return await GetCollection(index ?? 0).EstimatedDocumentCountAsync(); //.CountDocumentsAsync(new BsonDocument());
+        var coll = GetCollectionByCollectionName(collectionName);
+        return coll == null ? 0 : await coll.EstimatedDocumentCountAsync(); //.CountDocumentsAsync(new BsonDocument());
     }
 
     public async Task<Dictionary<string, long>> GetCollectionCountAsDictionaryAsync()
@@ -81,9 +84,14 @@ public class MongoDbRepo : IMongoDb
     }
 
     public async Task<ResponseBase> DeleteAsync(string msisdn)
-    {
+    {        
         var filter = EqFilter(msisdn);
-        var result = await GetCollection(msisdn).DeleteOneAsync(filter);
+
+        var coll = GetCollectionByMsisdn(msisdn);
+        if (coll == null)
+            return UnknownCollection();
+
+        var result = await coll.DeleteOneAsync(filter);
 
         return new ResponseBase
         {
@@ -95,7 +103,12 @@ public class MongoDbRepo : IMongoDb
     public async Task<Msisdn> GetAsync(string msisdn)
     {
         var filter = EqFilter(msisdn);
-        var result = await GetCollection(msisdn).Find(filter).FirstOrDefaultAsync();
+
+        var coll = GetCollectionByMsisdn(msisdn);
+        if (coll == null)
+            return null;
+
+        var result = await coll.Find(filter).FirstOrDefaultAsync();
 
         if (result == null)
             return null;
@@ -111,7 +124,12 @@ public class MongoDbRepo : IMongoDb
     public async Task<string> GetAsync(string msisdn, MsisdnField field)
     {
         var filter = EqFilter(msisdn);
-        var result = await GetCollection(msisdn).Find(filter).FirstOrDefaultAsync();
+
+        var coll = GetCollectionByMsisdn(msisdn);
+        if (coll == null)
+            return null;
+
+        var result = await coll.Find(filter).FirstOrDefaultAsync();
 
         if (result == null)
             return null;
@@ -127,12 +145,21 @@ public class MongoDbRepo : IMongoDb
     public async Task<bool> IsExistAsync(string msisdn)
     {
         var filter = EqFilter(msisdn);
-        return await GetCollection(msisdn).Find(filter).AnyAsync();
+
+        var coll = GetCollectionByMsisdn(msisdn);
+        if (coll == null)
+            return false;
+
+        return await coll.Find(filter).AnyAsync();
     }
 
     public async Task<ResponseBase> SetAsync(string msisdn, string @operator, DateTime? updateTime = null)
     {
         var filter = EqFilter(msisdn);
+
+        var coll = GetCollectionByMsisdn(msisdn);
+        if (coll == null)
+            return UnknownCollection();
 
         if (await IsExistAsync(msisdn))
         {
@@ -142,7 +169,7 @@ public class MongoDbRepo : IMongoDb
                 .Set(x => x.O, @operator)
                 .Set(x => x.U, ut);
 
-            var result = await GetCollection(msisdn).UpdateOneAsync(filter, updateData);
+            var result = await coll.UpdateOneAsync(filter, updateData);
             return new()
             {
                 IsSuccess = result.IsAcknowledged,
@@ -158,7 +185,7 @@ public class MongoDbRepo : IMongoDb
                 U = updateTime ?? DateTime.Now,
             };
 
-            await GetCollection(msisdn).InsertOneAsync(num);
+            await coll.InsertOneAsync(num);
             return new()
             {
                 IsSuccess = true,
@@ -167,10 +194,15 @@ public class MongoDbRepo : IMongoDb
         }
     }
 
-    public async IAsyncEnumerable<Msisdn> StreamAsync(int? index, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<Msisdn> StreamAsync(string collectionName, [EnumeratorCancellation] CancellationToken ct)
     {
         var filter = Builders<MongoMsisdn>.Filter.Empty;
-        var list = await GetCollection(index ?? 0).Find(filter).ToListAsync(cancellationToken: ct);
+
+        var coll = GetCollectionByCollectionName(collectionName);
+        if (coll == null)
+            yield break;
+
+        var list = await coll.Find(filter).ToListAsync(cancellationToken: ct);
 
         foreach (var l in list)
         {
@@ -185,21 +217,6 @@ public class MongoDbRepo : IMongoDb
             };
         }
     }
-
-    public Task<ResponseBase> SaveDocAsync(string username, string filename)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<string> GetDocAsync(string username)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<bool> IsUserExistAsync(string username)
-    {
-        throw new NotImplementedException();
-    }
 }
 
 internal class MongoMsisdn
@@ -213,4 +230,6 @@ internal class MongoMsisdn
 public interface IMongoDb : IPhoneLibraryDb
 {
     Task<Dictionary<string, long>> GetCollectionCountAsDictionaryAsync();
+    Task<long> CountAsync(string collctionName);
+    IAsyncEnumerable<Msisdn> StreamAsync(string collectionName, CancellationToken ct);
 }

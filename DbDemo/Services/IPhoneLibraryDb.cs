@@ -6,11 +6,7 @@ public interface IPhoneLibraryDb
     Task<Msisdn> GetAsync(string msisdn);
     Task<string> GetAsync(string msisdn, MsisdnField field);
     Task<ResponseBase> SetAsync(string msisdn, string @operator, DateTime? updateTime = null);
-    Task<long> CountRowAsync(int? index = null);
+    //[Obsolete("Use the one in dedicated interface")] Task<long> CountRowAsync(int? index = null);
     //Task<ResponseBase> InsertBatchAsync(List<PhoneNumber> list);
-    IAsyncEnumerable<Msisdn> StreamAsync(int? index, CancellationToken ct);
-    Task<ResponseBase> DeleteAsync(string msisdn);
-    Task<ResponseBase> SaveDocAsync(string username, string filename);
-    Task<string> GetDocAsync(string username);
-    Task<bool> IsUserExistAsync(string username);
+    Task<ResponseBase> DeleteAsync(string msisdn);    
 }
