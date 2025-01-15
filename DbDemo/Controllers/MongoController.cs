@@ -32,6 +32,9 @@ public class MongoController(ILogger<MongoController> logger, IMongoDb mongo) : 
         return await mongo.SetAsync(num, oper.ToString());
     }
 
+    [HttpGet("is-exist")]
+    public async Task<ActionResult<bool>> IsExist([FromQuery] string msisdn) => await mongo.IsExistAsync(msisdn);
+
     [HttpGet("get")]
     public async Task<ActionResult<Msisdn>> Get([FromQuery] string msisdn) => await mongo.GetAsync(msisdn);
 

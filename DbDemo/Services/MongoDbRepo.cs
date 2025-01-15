@@ -51,8 +51,12 @@ public class MongoDbRepo : IMongoDb
         if (string.IsNullOrWhiteSpace(msisdn))
             return null;
 
-        var end = int.Parse(msisdn[^1].ToString());
-        var key = GetCollectionName(end);
+        var succ = int.TryParse(msisdn[^1].ToString(), out var index);
+
+        if (!succ)
+            return null;
+
+        var key = GetCollectionName(index);
         return collections[key];
     }
 
