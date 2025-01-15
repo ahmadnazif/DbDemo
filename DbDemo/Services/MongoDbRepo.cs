@@ -46,7 +46,7 @@ public class MongoDbRepo : IMongoDb
 
     private static string GetCollectionName(int index) => $"p{index}";
 
-    private IMongoCollection<MongoMsisdn> GetCollectionByMsisdn(string msisdn)
+    private IMongoCollection<MongoMsisdn>? GetCollectionByMsisdn(string msisdn)
     {
         if (string.IsNullOrWhiteSpace(msisdn))
             return null;
@@ -56,15 +56,13 @@ public class MongoDbRepo : IMongoDb
         return collections[key];
     }
 
-    private IMongoCollection<MongoMsisdn> GetCollectionByCollectionName(string collectionName)
+    private IMongoCollection<MongoMsisdn>? GetCollectionByCollectionName(string collectionName)
     {
         var exist = collections.TryGetValue(collectionName, out var result);
         return exist ? result : null;
     }
 
     private static FilterDefinition<MongoMsisdn> EqFilter(string msisdn) => Builders<MongoMsisdn>.Filter.Eq(x => x.M, msisdn);
-
-
 
 
     public IEnumerable<string> ListCollectionNames() => collections.Keys;
