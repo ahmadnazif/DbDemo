@@ -152,7 +152,8 @@ public class MongoDbRepo : IMongoDb
         if (coll == null)
             return false;
 
-        return await coll.Find(filter).AnyAsync();
+        //return await coll.Find(filter).AnyAsync();
+        return await coll.Find(filter).Project("{ _id: 1 }").AnyAsync();
     }
 
     public async Task<ResponseBase> SetAsync(string msisdn, string @operator)
